@@ -10,7 +10,7 @@ class Main:
             from src.parser.parser import parser
             from src.visuals.game import Game
         p = parser()
-        p.parse("maps/challenger/01_the_impossible_dream.txt")
+        p.parse("maps/easy/01_linear_path.txt")
         p.print_vars()
-        # g = Game(parser_instance=p)
-        # g.run()
+        g = Game(parser_instance=p)
+        g.run()

@@ -1,181 +1,152 @@
-import math
+from __future__ import annotations
+
+from typing import Any
+
 import pygame
+
+from .helpers import color_from_map_value
+from .layout import (
+    buf_to_screen,
+    cell_positions_buffer,
+    compute_initial_size,
+    extract_zones,
+    layout_rects,
+    map_buffer_size,
+)
+from .pixel_render import (
+    draw_bridge_line,
+    draw_floating_platform,
+    draw_pixel_scene_base,
+    nearest_scale,
+)
+from .style import BASE_WINDOW, GRASS_TOP, MAP_MARGIN, PIXEL_SCALE
 
 
 class Game:
-    def __init__(self, parser_instance=None, width=1100, height=700):
+    def __init__(
+        self,
+        parser_instance: Any = None,
+        width: int | None = None,
+        height: int | None = None,
+    ) -> None:
         pygame.init()
-        self.screen = pygame.display.set_mode((width, height))
-        pygame.display.set_caption("Fly-in Visual Map")
+        self.parser = parser_instance
         self.clock = pygame.time.Clock()
         self.running = True
 
-        self.width = width
-        self.height = height
-        self.parser = parser_instance
-        self.margin = 70
-        self.pixel_size = 4
-        self.zone_radius = 18 // self.pixel_size
-        self.render_width = max(1, self.width // self.pixel_size)
-        self.render_height = max(1, self.height // self.pixel_size)
-        self.render_surface = pygame.Surface((self.render_width, self.render_height))
-        self.font = pygame.font.SysFont("arial", max(8, 16 // self.pixel_size), bold=True)
-        self.small_font = pygame.font.SysFont("arial", max(8, 12 // self.pixel_size))
+        zones = extract_zones(self.parser)
+        default_w, default_h = compute_initial_size(zones, BASE_WINDOW)
+        w = max(BASE_WINDOW[0], width if width is not None else default_w)
+        h = max(BASE_WINDOW[1], height if height is not None else default_h)
 
-        # Begrenzte Palette fuer klaren 8-Bit-Look.
-        self.palette = {
-            "water_0": (26, 75, 140),
-            "water_1": (34, 92, 168),
-            "water_2": (20, 58, 112),
-            "foam": (188, 222, 255),
-            "line": (225, 236, 255),
-            "sand": (225, 198, 123),
-            "grass": (88, 162, 88),
-            "outline": (32, 44, 32),
-            "text_dark": (20, 20, 24),
-            "text_light": (246, 246, 250),
-        }
-        self.connection_color = self.palette["line"]
+        self.screen = pygame.display.set_mode((w, h), pygame.RESIZABLE)
+        pygame.display.set_caption("Fly-in - Map")
+        self.width, self.height = self.screen.get_size()
 
-    def _extract_zones(self):
-        if self.parser is None or not hasattr(self.parser, "vars"):
-            return []
+        self.small_font = self._sys_font(13, bold=False)
+        self.map_label_font = self._sys_font(14, bold=True)
 
-        vars_data = getattr(self.parser, "vars", {})
-        if not isinstance(vars_data, dict):
-            return []
+    def _sys_font(self, size: int, bold: bool = False) -> pygame.font.Font:
+        for name in ("Segoe UI", "Helvetica Neue", "Arial Unicode MS", "Arial"):
+            font = pygame.font.SysFont(name, size, bold=bold)
+            if font:
+                return font
+        return pygame.font.Font(None, size)
 
-        zones = []
-        for value in vars_data.values():
-            if hasattr(value, "x") and hasattr(value, "y"):
-                zones.append(value)
-        return zones
+    def draw(self) -> None:
+        zones = extract_zones(self.parser)
+        map_rect = layout_rects(self.width, self.height)
+        tick = pygame.time.get_ticks()
 
-    def _compute_screen_positions(self, zones):
+        self.screen.fill((28, 24, 22))
+        bw, bh = map_buffer_size(map_rect)
+        margin_buf = max(4, MAP_MARGIN // PIXEL_SCALE)
+
+        buf = pygame.Surface((bw, bh))
+        draw_pixel_scene_base(buf, tick)
+
+        pos_buf: dict[str, tuple[int, int]] = {}
+        cell = 6
+        pw = 10
+        ph = 8
         if not zones:
-            return {}
+            msg_buf = pygame.font.Font(None, 14).render("No zones loaded.", True, (255, 240, 220))
+            buf.blit(msg_buf, (margin_buf, margin_buf))
+        else:
+            cell, pos_buf = cell_positions_buffer(zones, bw, bh, margin_buf)
+            pw = max(8, min(16, cell + 2))
+            ph = max(6, min(12, cell - 1))
+            zone_by_name = {zone.name: zone for zone in zones}
 
-        min_x = min(zone.x for zone in zones)
-        max_x = max(zone.x for zone in zones)
-        min_y = min(zone.y for zone in zones)
-        max_y = max(zone.y for zone in zones)
-
-        dx = max(max_x - min_x, 1)
-        dy = max(max_y - min_y, 1)
-
-        scaled_margin = max(6, self.margin // self.pixel_size)
-        usable_w = self.render_width - (scaled_margin * 2)
-        usable_h = self.render_height - (scaled_margin * 2)
-
-        positions = {}
-        for zone in zones:
-            nx = (zone.x - min_x) / dx
-            ny = (zone.y - min_y) / dy
-            px = scaled_margin + int(nx * usable_w)
-            py = scaled_margin + int(ny * usable_h)
-            positions[zone.name] = (px, py)
-        return positions
-
-    def _draw_animated_water(self, t):
-        # Pixelwasser mit Schachmuster + diskreten Wellen-Phasen.
-        block = 2
-        phase = int(t // 140) % 3
-        for y in range(0, self.render_height, block):
-            for x in range(0, self.render_width, block):
-                noise = (x // block + y // block + phase) % 3
-                if noise == 0:
-                    color = self.palette["water_0"]
-                elif noise == 1:
-                    color = self.palette["water_1"]
-                else:
-                    color = self.palette["water_2"]
-                self.render_surface.fill(color, (x, y, block, block))
-
-        # Wenige helle Pixelreihen als "Schaum" fuer 8-Bit-Animation.
-        for row in range(2, self.render_height, 9):
-            for x in range(0, self.render_width, 3):
-                wave = math.sin((x * 0.33) + (row * 0.2) + (phase * 1.3))
-                if wave > 0.82:
-                    self.render_surface.fill(self.palette["foam"], (x, row, 1, 1))
-
-    def _draw_connections(self, zones, positions):
-        zone_by_name = {zone.name: zone for zone in zones}
-        for zone in zones:
-            if not hasattr(zone, "connections"):
-                continue
-            start_pos = positions.get(zone.name)
-            if start_pos is None:
-                continue
-            for target_name in zone.connections:
-                if target_name not in zone_by_name:
+            for zone in zones:
+                if not hasattr(zone, "connections"):
                     continue
-                end_pos = positions.get(target_name)
-                if end_pos is None:
+                start = pos_buf.get(zone.name)
+                if start is None:
                     continue
-                pygame.draw.line(self.render_surface, self.connection_color, start_pos, end_pos, 1)
+                for target in zone.connections:
+                    if target not in zone_by_name:
+                        continue
+                    end = pos_buf.get(target)
+                    if end is None:
+                        continue
+                    draw_bridge_line(buf, start, end)
 
-    def _draw_islands(self, zones, positions):
-        for zone in zones:
-            px, py = positions[zone.name]
-            r_outer = self.zone_radius + 3
-            r_inner = self.zone_radius
+            for zone in zones:
+                bx, by = pos_buf[zone.name]
+                accent = color_from_map_value(getattr(zone, "color", None))
+                top_tint = (
+                    min(255, int(accent[0] * 0.55 + GRASS_TOP[0] * 0.45)),
+                    min(255, int(accent[1] * 0.55 + GRASS_TOP[1] * 0.45)),
+                    min(255, int(accent[2] * 0.55 + GRASS_TOP[2] * 0.45)),
+                )
+                draw_floating_platform(buf, bx, by, pw, ph, top_tint)
 
-            # Pixel-Insel als kantige 8-Bit-Fliese.
-            pygame.draw.rect(
-                self.render_surface,
-                self.palette["sand"],
-                (px - r_outer, py - r_outer, r_outer * 2, r_outer * 2),
-            )
-            pygame.draw.rect(
-                self.render_surface,
-                self.palette["grass"],
-                (px - r_inner, py - r_inner, r_inner * 2, r_inner * 2),
-            )
-            pygame.draw.rect(
-                self.render_surface,
-                self.palette["outline"],
-                (px - r_outer, py - r_outer, r_outer * 2, r_outer * 2),
-                1,
-            )
+        scaled = nearest_scale(buf, map_rect.width, map_rect.height)
+        self.screen.blit(scaled, map_rect.topleft)
+        pygame.draw.rect(self.screen, (48, 42, 38), map_rect, 2)
 
-            name_surface = self.font.render(zone.name, True, self.palette["text_dark"])
-            name_rect = name_surface.get_rect(center=(px, py - 1))
-            self.render_surface.blit(name_surface, name_rect)
+        if zones and pos_buf:
+            screen_pw = max(8, int(pw * map_rect.width / bw))
+            screen_ph = max(6, int(ph * map_rect.height / bh))
+            for zone in zones:
+                bx, by = pos_buf[zone.name]
+                sx, sy = buf_to_screen(map_rect, bx, by)
 
-            zone_type = getattr(zone, "zone_type", "normal")
-            info_surface = self.small_font.render(str(zone_type), True, self.palette["text_light"])
-            info_rect = info_surface.get_rect(center=(px, py + self.zone_radius + 4))
-            self.render_surface.blit(info_surface, info_rect)
+                hub = getattr(zone, "hub_kind", None)
+                tag = ""
+                if isinstance(hub, str):
+                    tag = {"start": "S", "end": "Z", "waypoint": "W"}.get(hub, "")
+                if tag:
+                    tag_surface = self.small_font.render(tag, True, (255, 255, 255))
+                    tag_rect = tag_surface.get_rect(
+                        center=(sx - screen_pw // 2 + 10, sy - screen_ph // 2 + 10)
+                    )
+                    outline = self.small_font.render(tag, True, (20, 18, 16))
+                    self.screen.blit(outline, (tag_rect.x + 1, tag_rect.y + 1))
+                    self.screen.blit(tag_surface, tag_rect)
 
-    def draw(self):
-        zones = self._extract_zones()
-        t = pygame.time.get_ticks()
-        self._draw_animated_water(t)
+                label = self.map_label_font.render(zone.name, True, (248, 250, 252))
+                label_rect = label.get_rect(center=(sx, sy + screen_ph // 2 + 12))
+                outline_label = self.map_label_font.render(zone.name, True, (18, 16, 20))
+                for ox, oy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+                    self.screen.blit(outline_label, (label_rect.x + ox, label_rect.y + oy))
+                self.screen.blit(label, label_rect)
 
-        if not zones:
-            msg = "Keine Zonen in parser.vars gefunden."
-            text = self.font.render(msg, True, self.palette["text_light"])
-            self.render_surface.blit(text, (8, 8))
-            scaled = pygame.transform.scale(self.render_surface, (self.width, self.height))
-            self.screen.blit(scaled, (0, 0))
-            pygame.display.flip()
-            return
-
-        positions = self._compute_screen_positions(zones)
-        self._draw_connections(zones, positions)
-        self._draw_islands(zones, positions)
-
-        scaled = pygame.transform.scale(self.render_surface, (self.width, self.height))
-        self.screen.blit(scaled, (0, 0))
         pygame.display.flip()
 
-    def run(self):
+    def run(self) -> None:
         while self.running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
                 elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     self.running = False
+                elif event.type == pygame.VIDEORESIZE:
+                    size = event.size if hasattr(event, "size") else (event.w, event.h)
+                    self.width = max(BASE_WINDOW[0], int(size[0]))
+                    self.height = max(BASE_WINDOW[1], int(size[1]))
+                    self.screen = pygame.display.set_mode((self.width, self.height), pygame.RESIZABLE)
 
             self.draw()
             self.clock.tick(60)

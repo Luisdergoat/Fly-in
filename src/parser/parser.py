@@ -83,6 +83,7 @@ class parser:
             parsed_zone = self._parse_zone_definition(line)
             if parsed_zone is None:
                 return False
+            parsed_zone.hub_kind = "start"
             self.vars["Zone_" + parsed_zone.name] = parsed_zone
 
         elif line.startswith("end_hub:"):
@@ -93,12 +94,14 @@ class parser:
             parsed_zone = self._parse_zone_definition(line)
             if parsed_zone is None:
                 return False
+            parsed_zone.hub_kind = "end"
             self.vars["Zone_" + parsed_zone.name] = parsed_zone
             return True
         elif line.startswith("hub:"):
             parsed_zone = self._parse_zone_definition(line)
             if parsed_zone is None:
                 return False
+            parsed_zone.hub_kind = "waypoint"
             self.vars["Zone_" + parsed_zone.name] = parsed_zone
             return True
         elif line.startswith("connection:"):
