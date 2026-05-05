@@ -1,5 +1,3 @@
-from .Zone_class import zone
-
 
 class parser:
     def __init__(self):
@@ -27,9 +25,13 @@ class parser:
 
         zone_type = "normal"
         color = None
-        max_drones = 1
+        max_drones = 200
 
         if meta:
+            try:
+                from .Zone_class import zone
+            except ImportError:
+                from src.parser.Zone_class import zone
             for item in meta.split():
                 if "=" not in item:
                     continue
@@ -45,23 +47,30 @@ class parser:
                         print("max_drones must be an integer")
                         return None
 
-        return zone(name, x, y, zone_type, color, max_drones)
+            try:
+                return zone(name, x, y, zone_type, color, max_drones)
+            except Exception as e:
+                print(f"An Error has occured while creating the zone object: {e}")
 
     def parse(self, file_path):
         if file_path is None:
             print("No file path provided")
             return False
-        with open(file_path, 'r') as f:
-            data = f.readlines()
-            for line in data:
-                if line.startswith('#') or line.startswith('//'):
-                    continue
-                if line.strip() == '':
-                    continue
-                line = line.strip()
-                if self.parse_line(line) is False:
-                    return False
-        return True
+        try:
+            with open(file_path, 'r') as f:
+                data = f.readlines()
+                for line in data:
+                    if line.startswith('#') or line.startswith('//'):
+                        continue
+                    if line.strip() == '':
+                        continue
+                    line = line.strip()
+                    if self.parse_line(line) is False:
+                        return False
+            return True
+        except FileNotFoundError:
+            print(f"File not found: {file_path}")
+            return False
 
     def parse_line(self, line):
         if line.startswith("nb_drones:"):
@@ -84,7 +93,7 @@ class parser:
             if parsed_zone is None:
                 return False
             parsed_zone.hub_kind = "start"
-            self.vars["Zone_" + parsed_zone.name] = parsed_zone
+            self.vars[parsed_zone.name] = parsed_zone
 
         elif line.startswith("end_hub:"):
             if self.seen_end_hub is True:
@@ -95,31 +104,54 @@ class parser:
             if parsed_zone is None:
                 return False
             parsed_zone.hub_kind = "end"
-            self.vars["Zone_" + parsed_zone.name] = parsed_zone
+            self.vars[parsed_zone.name] = parsed_zone
             return True
         elif line.startswith("hub:"):
             parsed_zone = self._parse_zone_definition(line)
             if parsed_zone is None:
                 return False
             parsed_zone.hub_kind = "waypoint"
-            self.vars["Zone_" + parsed_zone.name] = parsed_zone
+            self.vars[parsed_zone.name] = parsed_zone
             return True
         elif line.startswith("connection:"):
-            connection_part = line.split(":", 1)[1].strip()
-            if "-" not in connection_part:
+            rest = line.split(":", 1)[1].strip()
+            meta_str = ""
+            if "[" in rest:
+                main, meta_str = rest.split("[", 1)
+                rest = main.strip()
+                meta_str = meta_str.strip("] ")
+            if "-" not in rest:
                 print("connection format must be: connection: A-B")
                 return False
-            start, end = [item.strip() for item in connection_part.split("-", 1)]
+            start, end = [item.strip() for item in rest.split("-", 1)]
+            edge_meta = self._parse_connection_meta(meta_str)
             connections = {start: end}
-            return self.parse_map(self.vars, connections)
+            return self.parse_map(self.vars, connections, edge_meta)
 
         else:
             print("Error while parsing")
             return False
         return True
 
-    def parse_map(self, vars, connections):
+    def _parse_connection_meta(self, meta_str: str) -> dict:
+        out: dict[str, str] = {}
+        if not meta_str:
+            return out
+        for item in meta_str.split():
+            if "=" not in item:
+                continue
+            key, value = item.split("=", 1)
+            out[key.strip()] = value.strip()
+        return out
+
+    def place_drones(self):
+        for i in range(self.nb_drones):
+            drone_id = f"drone{i}"
+            self.vars["start"].add_drone(drone_id)
+
+    def parse_map(self, vars, connections, edge_meta: dict | None = None):
         # hier muss ich die connections in die zones packen
+        edge_meta = edge_meta or {}
         name_to_key = {value.name: key for key, value in vars.items()}
 
         for start, end in connections.items():
@@ -129,6 +161,13 @@ class parser:
                 if not hasattr(vars[start_key], "connections"):
                     vars[start_key].connections = []
                 vars[start_key].connections.append(end)
+                if "max_link_capacity" in edge_meta:
+                    try:
+                        cap = int(edge_meta["max_link_capacity"])
+                        vars[start_key].link_capacity[end] = cap
+                    except ValueError:
+                        print("max_link_capacity must be an integer")
+                        return False
 
             else:
                 print(f"Error: {start} or {end} not found in variables")

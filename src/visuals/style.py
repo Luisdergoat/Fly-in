@@ -51,4 +51,27 @@ MAP_COLORS: dict[str, Color] = {
     "gray": (149, 165, 166),
     "grey": (149, 165, 166),
     "black": (40, 44, 52),
+    "gold": (255, 193, 7),
+    "brown": (121, 85, 72),
+    "maroon": (128, 0, 32),
+    "darkred": (139, 0, 0),
+    "violet": (138, 43, 226),
+    "crimson": (220, 20, 60),
+    "lime": (50, 205, 50),
 }
+
+# Distinct edge colors for multiple connections from one waypoint (high contrast on sky).
+CONNECTION_PALETTE: tuple[Color, ...] = (
+    (255, 82, 82),
+    (64, 196, 255),
+    (255, 214, 64),
+    (180, 120, 255),
+    (64, 255, 170),
+    (255, 128, 200),
+    (200, 200, 255),
+    (255, 160, 64),
+    (120, 220, 255),
+    (200, 255, 120),
+    (255, 100, 255),
+    (160, 255, 255),
+)
