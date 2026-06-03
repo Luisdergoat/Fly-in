@@ -1,12 +1,9 @@
+import sys
+
+from src.main import Main
+
+
 if __name__ == "__main__":
-    try:
-        from src.main import Main
-        import sys
-        import os
-    except ImportError:
-        from main import Main
-        import sys
-        import os
-    map = sys.argv[1] if len(sys.argv) > 1 else None
-    start = Main(map)
+    map_path = sys.argv[1] if len(sys.argv) > 1 else None
+    start = Main(map_path)
     start.run()

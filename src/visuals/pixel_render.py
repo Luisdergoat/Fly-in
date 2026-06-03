@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pygame
 
 from .helpers import MapColorUtils
@@ -240,7 +242,7 @@ class PixelRenderer:
     @staticmethod
     def draw_zone_node(
         buf: pygame.Surface,
-        zone: object,
+        zone: Any,
         cx: int,
         cy: int,
         pw: int,
@@ -279,7 +281,14 @@ class PixelRenderer:
             return
 
         if zt == "priority":
-            PixelRenderer.draw_floating_island(buf, cx, cy, pw, ph, MapColorUtils.lerp_rgb(accent, (255, 230, 120), 0.15))
+            PixelRenderer.draw_floating_island(
+                buf,
+                cx,
+                cy,
+                pw,
+                ph,
+                MapColorUtils.lerp_rgb(accent, (255, 230, 120), 0.15),
+            )
             for ox in range(-pw // 2 + 1, pw // 2 - 1, 2):
                 px = cx + ox
                 py = cy - ph // 2 + 1
@@ -287,7 +296,14 @@ class PixelRenderer:
                     buf.set_at((px, py), (255, 255, 200))
             return
         if zt == "restricted":
-            PixelRenderer.draw_floating_island(buf, cx, cy, pw, ph, MapColorUtils.lerp_rgb(accent, (255, 140, 60), 0.12))
+            PixelRenderer.draw_floating_island(
+                buf,
+                cx,
+                cy,
+                pw,
+                ph,
+                MapColorUtils.lerp_rgb(accent, (255, 140, 60), 0.12),
+            )
             for ox in range(-pw // 2, pw // 2, 2):
                 px = cx + ox
                 for oy in range(-ph // 2, ph // 2):

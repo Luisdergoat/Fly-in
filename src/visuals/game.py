@@ -193,10 +193,21 @@ class Game:
             y = y_base + i * line_h + (line_h - sq) // 2
             pygame.draw.rect(panel, rgb, (pad, y, sq, sq))
             pygame.draw.rect(panel, (255, 255, 255), (pad, y, sq, sq), 1)
-            panel.blit(surf, (pad + sq + gap, y_base + i * line_h + (line_h - surf.get_height()) // 2))
+            panel.blit(
+                surf,
+                (pad + sq + gap, y_base + i * line_h + (line_h - surf.get_height()) // 2),
+            )
         self.screen.blit(panel, (x0, y0))
 
-    def _blit_outlined(self, surf: pygame.Surface, rect: pygame.Rect, text: str, font: pygame.font.Font, fg: tuple, bg: tuple) -> None:
+    def _blit_outlined(
+        self,
+        surf: pygame.Surface,
+        rect: pygame.Rect,
+        text: str,
+        font: pygame.font.Font,
+        fg: tuple,
+        bg: tuple,
+    ) -> None:
         x, y = rect.x, rect.y
         for ox, oy in ((-2, 0), (2, 0), (0, -2), (0, 2), (-1, -1), (1, 1), (-1, 1), (1, -1)):
             surf.blit(font.render(text, True, bg), (x + ox, y + oy))
@@ -208,7 +219,9 @@ class Game:
         overlay.fill((10, 12, 22, 245))
         self.screen.blit(overlay, (0, 0))
 
-        tr = self.splash_font.render("Complete", True, (255, 255, 255)).get_rect(center=(self.width // 2, self.height // 2 - 78))
+        tr = self.splash_font.render("Complete", True, (255, 255, 255)).get_rect(
+            center=(self.width // 2, self.height // 2 - 78)
+        )
         self._blit_outlined(self.screen, tr, "Complete", self.splash_font, (255, 255, 255), (0, 0, 0))
 
         t1 = f"Simulation rounds: {sim_turns}"
@@ -219,7 +232,9 @@ class Game:
         self._blit_outlined(self.screen, r2, t2, self.splash_sub, (200, 220, 255), (0, 0, 0))
 
         ht = "Press Esc to close"
-        hr = self.legend_font.render(ht, True, (180, 190, 220)).get_rect(center=(self.width // 2, self.height // 2 + 72))
+        hr = self.legend_font.render(ht, True, (180, 190, 220)).get_rect(
+            center=(self.width // 2, self.height // 2 + 72)
+        )
         self._blit_outlined(self.screen, hr, ht, self.legend_font, (180, 190, 220), (0, 0, 0))
         pygame.display.flip()
 
@@ -234,7 +249,7 @@ class Game:
             self.clock.tick(120)
 
     def wait_for_space_to_start(self) -> bool:
-        """Animated title screen; Space starts, Esc or Q quits."""
+        """Wait at the initial map view; Space starts, Esc or Q quits."""
         while self.running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -251,8 +266,7 @@ class Game:
                     self.height = max(480, int(event.h))
                     self.screen = pygame.display.set_mode((self.width, self.height), pygame.RESIZABLE)
                     self._refresh_fonts()
-            self._draw_start_screen(pygame.time.get_ticks())
-            pygame.display.flip()
+            self.show_state(0, "Press SPACE to start")
             self.clock.tick(120)
         return False
 
@@ -268,7 +282,9 @@ class Game:
         self.screen.blit(veil, (0, 0))
 
         title = "Fly-in"
-        tr = self.splash_font.render(title, True, (255, 255, 255)).get_rect(center=(self.width // 2, self.height // 2 - 48))
+        tr = self.splash_font.render(title, True, (255, 255, 255)).get_rect(
+            center=(self.width // 2, self.height // 2 - 48)
+        )
         self._blit_outlined(self.screen, tr, title, self.splash_font, (255, 255, 255), (8, 10, 28))
 
         sub_c = MapColorUtils.lerp_rgb((160, 175, 210), (255, 255, 255), 0.35 + 0.45 * pulse)
@@ -277,7 +293,9 @@ class Game:
         self._blit_outlined(self.screen, sr, sub, self.splash_sub, sub_c, (0, 0, 0))
 
         hint = "Esc or Q to quit"
-        hr = self.start_tag.render(hint, True, (150, 160, 190)).get_rect(center=(self.width // 2, self.height // 2 + 58))
+        hr = self.start_tag.render(hint, True, (150, 160, 190)).get_rect(
+            center=(self.width // 2, self.height // 2 + 58)
+        )
         self._blit_outlined(self.screen, hr, hint, self.start_tag, (150, 160, 190), (0, 0, 0))
 
     def _buf_pos_for_drone(
@@ -392,7 +410,6 @@ class Game:
     ) -> None:
         tick = pygame.time.get_ticks()
         zones, map_rect, bw, bh, cell, pos_buf = self._layout_pack()
-        margin_buf = max(4, MAP_MARGIN // PIXEL_SCALE)
 
         self.screen.fill((18, 22, 38))
         buf = pygame.Surface((bw, bh))
@@ -525,9 +542,9 @@ class Game:
         by_zone = self._drones_by_zone()
         loc = self._drone_zone_map()
         incoming: dict[str, list[str]] = defaultdict(list)
-        for did, pr in proposals.items():
-            if pr and pr[0] and pr[1] and pr[0] != pr[1]:
-                incoming[str(pr[1])].append(did)
+        for did, proposal in proposals.items():
+            if proposal and proposal[0] and proposal[1] and proposal[0] != proposal[1]:
+                incoming[str(proposal[1])].append(did)
         for k in incoming:
             incoming[k].sort()
 

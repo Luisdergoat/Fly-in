@@ -92,7 +92,17 @@ class drone_algo:
             return False
         occ = len(next_zone.drones) + getattr(next_zone, "pending_incoming", 0)
         if occ >= next_zone.max_drones:
-            print(f"Drone {drone_id} cannot move from {current_zone.name} to {next_zone.name}: next zone is at max capacity")
+            print(
+                f"Drone {drone_id} cannot move from {current_zone.name} "
+                f"to {next_zone.name}: next zone is at max capacity"
+            )
+            return False
+        return True
+
+    def _is_zone_traversable(self, current_zone, next_zone) -> bool:
+        if current_zone.zone_type == "no_fly":
+            return False
+        if next_zone.zone_type in ("no_fly", "blocked"):
             return False
         return True
 
@@ -123,7 +133,7 @@ class drone_algo:
         print(f"Drone {drone_id} not found")
         return None
 
-    def get_possible_moves(self, drone_id, current_zone_name):
+    def get_possible_moves(self, drone_id, current_zone_name, *, consider_capacity: bool = True):
         if current_zone_name not in self.parser_instance.vars:
             print("Current zone not found")
             return []
@@ -134,7 +144,10 @@ class drone_algo:
         for next_zone_name in getattr(current_zone, "connections", []) or []:
             if next_zone_name in self.parser_instance.vars.keys():
                 next_zone = self.parser_instance.vars[next_zone_name]
-                if self.check_next_move(drone_id, current_zone, next_zone):
+                if consider_capacity:
+                    if self.check_next_move(drone_id, current_zone, next_zone):
+                        possible_moves.append(next_zone_name)
+                elif self._is_zone_traversable(current_zone, next_zone):
                     possible_moves.append(next_zone_name)
         return possible_moves
 
@@ -286,7 +299,9 @@ class drone_algo:
             z.drones = end[k]
 
     def decide_next_move(self, drone_id, current_zone_name, quiet=False):
-        possible_moves = self.get_possible_moves(drone_id, current_zone_name)
+        # Capacity is resolved globally in `apply_resolved_moves`; skipping it here
+        # enables same-turn vacate/refill chains at tight bottlenecks.
+        possible_moves = self.get_possible_moves(drone_id, current_zone_name, consider_capacity=False)
         if not quiet:
             print(f"Possible moves: {possible_moves}")
 

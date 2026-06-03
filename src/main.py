@@ -49,7 +49,7 @@ class Main:
             return
         p.place_drones()
         a = drone_algo(parser_instance=p)
-        
+
         output_gen = File_generator("fly_in.txt")
 
         max_turns = int(os.environ.get("FLYIN_MAX_TURNS", "10000"))
@@ -104,7 +104,7 @@ class Main:
             for did, (src, dst) in proposals.items():
                 if src != dst:
                     turn_movements[did] = dst
-            
+
             if turn_movements:
                 output_gen.record_turn(turn_movements)
 
@@ -125,6 +125,7 @@ class Main:
                 print(f"\n--- Turn {turn} ---")
                 p.print_vars()
 
+        os.system("clear")
         print(f"\nAll drones reached the goal in {turn} simulation round(s). Move units: {a.turn_units}")
         output_gen.finalize()
         print("Output written to fly_in.txt")
@@ -133,4 +134,3 @@ class Main:
         import pygame
 
         pygame.quit()
-

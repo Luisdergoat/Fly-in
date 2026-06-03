@@ -31,10 +31,7 @@ class File_generator:
 
     def create_file(self, counter):
         """Deprecated: use record_turn and finalize instead."""
-        try:
-            from src.parser.parser import parser
-        except ImportError:
-            from parser import parser
+        from src.parser.parser import parser
         try:
             with open(self.file_path, 'a') as f:
                 for turn in parser.instance.vars:
