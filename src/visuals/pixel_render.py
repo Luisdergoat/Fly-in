@@ -33,7 +33,9 @@ class PixelRenderer:
     """Low-resolution buffer drawing: sky, islands, links, zone hubs."""
 
     @staticmethod
-    def nearest_scale(src: pygame.Surface, target_w: int, target_h: int) -> pygame.Surface:
+    def nearest_scale(
+        src: pygame.Surface, target_w: int, target_h: int
+    ) -> pygame.Surface:
         sw, sh = src.get_size()
         if sw <= 0 or sh <= 0:
             return pygame.Surface((max(1, target_w), max(1, target_h)))
@@ -61,7 +63,9 @@ class PixelRenderer:
                 t2 = t / 0.55
                 c_lo = MapColorUtils.lerp_rgb(SKY_TOP, SKY_MID, t2)
                 c_hi = MapColorUtils.lerp_rgb(
-                    (min(255, c_lo[0] + 18), min(255, c_lo[1] + 10), min(255, c_lo[2] + 8)),
+                    (min(255, c_lo[0] + 18), min(
+                        255, c_lo[1] + 10
+                        ), min(255, c_lo[2] + 8)),
                     SKY_MID,
                     t2,
                 )
@@ -70,7 +74,9 @@ class PixelRenderer:
                 c_lo = MapColorUtils.lerp_rgb(SKY_MID, SKY_HORIZON, t2)
                 c_hi = MapColorUtils.lerp_rgb(
                     SKY_MID,
-                    (min(255, SKY_HORIZON[0] + 10), SKY_HORIZON[1], SKY_HORIZON[2]),
+                    (min(
+                        255, SKY_HORIZON[0] + 10
+                        ), SKY_HORIZON[1], SKY_HORIZON[2]),
                     t2,
                 )
             for x in range(w):
@@ -91,7 +97,11 @@ class PixelRenderer:
                 for bx in range(cw):
                     dx = bx - cw // 2
                     dy = by - ch // 2
-                    if (dx * dx) / ((cw // 2) ** 2 + 1) + (dy * dy) / ((ch // 2) ** 2 + 1) <= 1.0:
+                    if (
+                        (dx * dx) / ((cw // 2) ** 2 + 1) + (
+                            dy * dy
+                            ) / ((ch // 2) ** 2 + 1) <= 1.0
+                    ):
                         px = cx + bx
                         py = cy + by
                         if 0 <= px < w and 0 <= py < h:
@@ -105,9 +115,13 @@ class PixelRenderer:
             for x in range(w):
                 band = y - y0
                 if band < 2:
-                    color = FOREST_GRASS_LIGHT if (x + y) % 2 == 0 else FOREST_GRASS_MID
+                    color = FOREST_GRASS_LIGHT if (
+                        x + y
+                        ) % 2 == 0 else FOREST_GRASS_MID
                 elif band < 5:
-                    color = FOREST_GRASS_MID if (x // 2 + y) % 2 == 0 else FOREST_GRASS_DARK
+                    color = FOREST_GRASS_MID if (
+                        x // 2 + y
+                        ) % 2 == 0 else FOREST_GRASS_DARK
                 else:
                     noise = (x // 3 + y // 2) % 3
                     if noise == 0:
@@ -145,7 +159,9 @@ class PixelRenderer:
                         px = cx + dx
                         py = crown_y + dy
                         if 0 <= px < w and 0 <= py < h:
-                            shade = (160 + (dx + dy) % 20, 60 + abs(dy) * 8, 35 + abs(dx) * 2)
+                            shade = (160 + (
+                                dx + dy
+                                ) % 20, 60 + abs(dy) * 8, 35 + abs(dx) * 2)
                             surf.set_at((px, py), shade)
 
     @staticmethod
@@ -158,11 +174,17 @@ class PixelRenderer:
                 x0 = edge + side * min(span, 18)
                 for x in range(min(x0, edge), max(x0, edge) + 1):
                     if 0 <= x < w:
-                        surf.set_at((x, y), ROCK_DARK if (x + y) % 3 else ROCK_MID)
+                        surf.set_at(
+                            (x, y), ROCK_DARK if (x + y) % 3 else ROCK_MID
+                            )
             for y in range(ground_y - 5, ground_y):
-                x_strip = range(0, min(14, w // 4)) if side < 0 else range(w - min(14, w // 4), w)
+                x_strip = range(
+                    0, min(14, w // 4)
+                    ) if side < 0 else range(w - min(14, w // 4), w)
                 for x in x_strip:
-                    surf.set_at((x, y), GRASS_TOP if (x + y) % 2 == 0 else GRASS_HI)
+                    surf.set_at(
+                        (x, y), GRASS_TOP if (x + y) % 2 == 0 else GRASS_HI
+                        )
 
     @staticmethod
     def draw_pixel_scene_base(buf: pygame.Surface, tick: int) -> None:
@@ -174,7 +196,9 @@ class PixelRenderer:
         PixelRenderer.draw_ground_forest(buf, bw, bh)
 
     @staticmethod
-    def draw_clouds_bottom_band(surf: pygame.Surface, w: int, h: int, tick: int) -> None:
+    def draw_clouds_bottom_band(
+        surf: pygame.Surface, w: int, h: int, tick: int
+    ) -> None:
         drift = (tick // 70 + 33) % (w + 50)
         base_y = int(h * 0.52)
         blobs = (
@@ -187,7 +211,9 @@ class PixelRenderer:
                 for bx in range(cw):
                     dx = bx - cw // 2
                     dy = by - ch // 2
-                    if (dx * dx) / ((cw // 2) ** 2 + 1) + (dy * dy) / ((ch // 2) ** 2 + 1) <= 1.0:
+                    if (dx * dx) / (
+                        (cw // 2) ** 2 + 1) + (dy * dy) / ((ch // 2) ** 2 + 1
+                                                           ) <= 1.0:
                         px = cx + bx
                         py = cy + by
                         if 0 <= px < w and 0 <= py < h:
@@ -202,26 +228,34 @@ class PixelRenderer:
 
     @staticmethod
     def draw_connection_line(
-        buf: pygame.Surface, a: tuple[int, int], b: tuple[int, int], color: Color, width: int = 1
+        buf: pygame.Surface, a: tuple[
+            int, int
+            ], b: tuple[int, int], color: Color, width: int = 1
     ) -> None:
         w = max(1, width)
         pygame.draw.line(buf, color, a, b, width=w)
 
     @staticmethod
     def draw_floating_island(
-        buf: pygame.Surface, cx: int, cy: int, pw: int, ph: int, top_tint: Color
+        buf: pygame.Surface, cx: int, cy: int, pw: int, ph: int, top_tit: Color
     ) -> None:
         x0 = cx - pw // 2
         y0 = cy - ph // 2
         for y in range(ph):
             for x in range(pw):
                 px, py = x0 + x, y0 + y
-                if not (0 <= px < buf.get_width() and 0 <= py < buf.get_height()):
+                if not (
+                    0 <= px < buf.get_width() and 0 <= py < buf.get_height()
+                ):
                     continue
                 if y < 2:
-                    color = top_tint if (x + y) % 2 == 0 else MapColorUtils.lerp_rgb(top_tint, ROCK_MID, 0.35)
+                    color = top_tit if (
+                        x + y
+                        ) % 2 == 0 else MapColorUtils.lerp_rgb(
+                            top_tit, ROCK_MID, 0.35
+                            )
                 elif y < 4:
-                    color = MapColorUtils.lerp_rgb(top_tint, ROCK_MID, 0.55)
+                    color = MapColorUtils.lerp_rgb(top_tit, ROCK_MID, 0.55)
                 else:
                     noise = (x // 2 + y // 3) % 3
                     color = (ROCK_DARK, ROCK_MID, ROCK_LIGHT)[noise]
@@ -253,8 +287,12 @@ class PixelRenderer:
         hub = getattr(zone, "hub_kind", None) or "waypoint"
         zt = getattr(zone, "zone_type", "normal") or "normal"
         color_raw = getattr(zone, "color", None)
-        if isinstance(color_raw, str) and color_raw.strip().lower() == "rainbow":
-            accent = MapColorUtils.rainbow_rgb(tick / 2200.0 + PixelRenderer._name_hash_to_unit(zone.name))
+        if isinstance(
+            color_raw, str
+        ) and color_raw.strip().lower() == "rainbow":
+            accent = MapColorUtils.rainbow_rgb(
+                tick / 2200.0 + PixelRenderer._name_hash_to_unit(zone.name)
+                )
 
         if zt == "blocked":
             accent = (55, 52, 58)
@@ -267,7 +305,8 @@ class PixelRenderer:
             PixelRenderer.draw_floating_island(buf, cx, cy, pw, ph, top)
             for dx in range(-1, 2):
                 px = cx + dx
-                if 0 <= px < buf.get_width() and 0 <= cy - ph // 2 - 1 < buf.get_height():
+                if 0 <= px < buf.get_width(
+                ) and 0 <= cy - ph // 2 - 1 < buf.get_height():
                     buf.set_at((px, cy - ph // 2 - 1), (255, 255, 100))
             return
         if hub == "end":
@@ -309,7 +348,8 @@ class PixelRenderer:
                 for oy in range(-ph // 2, ph // 2):
                     if (ox + oy) % 4 == 0:
                         py = cy + oy
-                        if 0 <= px < buf.get_width() and 0 <= py < buf.get_height():
+                        if 0 <= px < buf.get_width(
+                        ) and 0 <= py < buf.get_height():
                             buf.set_at((px, py), (40, 35, 30))
             return
         if zt == "blocked":
@@ -318,30 +358,35 @@ class PixelRenderer:
                 for oy in range(-ph // 2, ph // 2):
                     if abs(ox) == abs(oy) or ox == -oy:
                         px, py = cx + ox, cy + oy
-                        if 0 <= px < buf.get_width() and 0 <= py < buf.get_height():
+                        if 0 <= px < buf.get_width(
+                        ) and 0 <= py < buf.get_height():
                             buf.set_at((px, py), (20, 18, 24))
             return
         if zt == "no_fly":
             PixelRenderer.draw_floating_island(buf, cx, cy, pw, ph, top)
             return
 
-        PixelRenderer.draw_floating_island(buf, cx, cy, pw, ph, MapColorUtils.lerp_rgb(accent, ROCK_MID, 0.2))
+        PixelRenderer.draw_floating_island(
+            buf, cx, cy, pw, ph, MapColorUtils.lerp_rgb(accent, ROCK_MID, 0.2)
+            )
 
     @staticmethod
     def draw_floating_platform(
-        buf: pygame.Surface, cx: int, cy: int, pw: int, ph: int, top_tint: Color
+        buf: pygame.Surface, cx: int, cy: int, pw: int, ph: int, top_tit: Color
     ) -> None:
         x0 = cx - pw // 2
         y0 = cy - ph // 2
         for y in range(ph):
             for x in range(pw):
                 px, py = x0 + x, y0 + y
-                if not (0 <= px < buf.get_width() and 0 <= py < buf.get_height()):
+                if not (
+                    0 <= px < buf.get_width() and 0 <= py < buf.get_height()
+                ):
                     continue
                 if y < 3:
-                    color = GRASS_HI if (x + y) % 2 == 0 else top_tint
+                    color = GRASS_HI if (x + y) % 2 == 0 else top_tit
                 elif y == 3:
-                    color = MapColorUtils.lerp_rgb(top_tint, ROCK_MID, 0.4)
+                    color = MapColorUtils.lerp_rgb(top_tit, ROCK_MID, 0.4)
                 else:
                     noise = (x // 2 + y // 3) % 3
                     color = (ROCK_DARK, ROCK_MID, ROCK_LIGHT)[noise]
@@ -353,7 +398,9 @@ class PixelRenderer:
                 buf.set_at((px, py), (42, 38, 48))
 
     @staticmethod
-    def draw_bridge_line(buf: pygame.Surface, a: tuple[int, int], b: tuple[int, int]) -> None:
+    def draw_bridge_line(
+        buf: pygame.Surface, a: tuple[int, int], b: tuple[int, int]
+    ) -> None:
         x0, y0 = a
         x1, y1 = b
         dx = abs(x1 - x0)
@@ -367,7 +414,9 @@ class PixelRenderer:
             for ox, oy in ((0, 0), (1, 0), (0, 1)):
                 px, py = x + ox, y + oy
                 if 0 <= px < w and 0 <= py < h:
-                    buf.set_at((px, py), BRIDGE if (px + py) % 2 == 0 else BRIDGE_HI)
+                    buf.set_at(
+                        (px, py), BRIDGE if (px + py) % 2 == 0 else BRIDGE_HI
+                        )
             if x == x1 and y == y1:
                 break
             e2 = 2 * err

@@ -55,19 +55,31 @@ class Game:
             if hasattr(pygame, "SCALED"):
                 flags |= pygame.SCALED
             try:
-                self.screen = pygame.display.set_mode((self.width, self.height), flags)
+                self.screen = pygame.display.set_mode(
+                    (self.width, self.height), flags
+                    )
             except pygame.error:
                 self.fullscreen = False
                 self.width, self.height = 1280, 720
-                self.screen = pygame.display.set_mode((self.width, self.height), pygame.RESIZABLE)
+                self.screen = pygame.display.set_mode(
+                    (self.width, self.height), pygame.RESIZABLE
+                    )
         else:
             self.width, self.height = 1100, 760
-            self.screen = pygame.display.set_mode((self.width, self.height), pygame.RESIZABLE)
+            self.screen = pygame.display.set_mode(
+                (self.width, self.height), pygame.RESIZABLE
+                )
         pygame.display.set_caption("Fly-in")
 
     def _sys_font(self, size: int, bold: bool = False) -> pygame.font.Font:
         size = max(8, size)
-        for name in ("Segoe UI", "Helvetica Neue", "Arial Unicode MS", "Arial", "DejaVu Sans"):
+        for name in (
+            "Segoe UI",
+            "Helvetica Neue",
+            "Arial Unicode MS",
+            "Arial",
+            "DejaVu Sans"
+        ):
             try:
                 font = pygame.font.SysFont(name, size, bold=bold)
                 if font:
@@ -83,7 +95,9 @@ class Game:
         self.zone_tag_font = self._sys_font(max(10, int(h * 0.016)), bold=True)
         # Compact turn readout (left margin, no top bar)
         self.turn_hud_main = self._sys_font(max(13, int(h * 0.021)), bold=True)
-        self.turn_hud_phase = self._sys_font(max(10, int(h * 0.015)), bold=False)
+        self.turn_hud_phase = self._sys_font(
+            max(10, int(h * 0.015)), bold=False
+            )
         self.legend_font = self._sys_font(max(10, int(h * 0.014)), bold=False)
         self.splash_font = self._sys_font(max(28, int(h * 0.046)), bold=True)
         self.splash_sub = self._sys_font(max(18, int(h * 0.028)), bold=False)
@@ -99,22 +113,32 @@ class Game:
             if event.type == pygame.QUIT:
                 self.running = False
                 return False
-            if event.type == pygame.KEYDOWN and event.key in (pygame.K_ESCAPE, pygame.K_q):
+            if event.type == pygame.KEYDOWN and event.key in (
+                pygame.K_ESCAPE, pygame.K_q
+            ):
                 self.running = False
                 return False
             if event.type == pygame.VIDEORESIZE and not self.fullscreen:
                 self.width = max(640, int(event.w))
                 self.height = max(480, int(event.h))
-                self.screen = pygame.display.set_mode((self.width, self.height), pygame.RESIZABLE)
+                self.screen = pygame.display.set_mode(
+                    (self.width, self.height), pygame.RESIZABLE
+                    )
                 self._refresh_fonts()
         return self.running
 
-    def _layout_pack(self) -> tuple[list[Any], pygame.Rect, int, int, int, dict[str, tuple[int, int]]]:
+    def _layout_pack(
+        self
+        ) -> tuple[
+            list[Any], pygame.Rect, int, int, int, dict[str, tuple[int, int]]
+            ]:
         zones = MapLayout.extract_zones(self.parser)
         map_rect = MapLayout.layout_rects(self.width, self.height)
         bw, bh = MapLayout.map_buffer_size(map_rect)
         margin_buf = max(4, MAP_MARGIN // PIXEL_SCALE)
-        cell, pos_buf = MapLayout.cell_positions_buffer(zones, bw, bh, margin_buf)
+        cell, pos_buf = MapLayout.cell_positions_buffer(
+            zones, bw, bh, margin_buf
+            )
         return zones, map_rect, bw, bh, cell, pos_buf
 
     def _accent(self, zone: Any, tick: int) -> tuple[int, int, int]:
@@ -141,7 +165,9 @@ class Game:
                     out[d] = z.name
         return out
 
-    def _buf_xy_transit(self, did: str, pos_buf: dict[str, tuple[int, int]]) -> tuple[float, float] | None:
+    def _buf_xy_transit(
+        self, did: str, pos_buf: dict[str, tuple[int, int]]
+                        ) -> tuple[float, float] | None:
         if not self.algo:
             return None
         tr = self.algo.transit_visual_anchor(did)
@@ -155,17 +181,26 @@ class Game:
         return (sx + ex) * 0.5, (sy + ey) * 0.5
 
     def _legend_rows(self) -> list[tuple[str, tuple[int, int, int]]]:
-        """Full-word labels + RGB swatches matching `draw_zone_node` tints (default parser accents)."""
+
         return [
-            ("Start hub", MapColorUtils.lerp_rgb((72, 168, 92), (80, 200, 120), 0.25)),
-            ("Goal", MapColorUtils.lerp_rgb((234, 67, 53), (200, 100, 255), 0.2)),
-            ("Waypoint", MapColorUtils.lerp_rgb((66, 133, 244), ROCK_MID, 0.2)),
-            ("Priority zone", MapColorUtils.lerp_rgb((255, 193, 7), (255, 230, 120), 0.15)),
-            ("Restricted zone", MapColorUtils.lerp_rgb((121, 85, 72), (255, 140, 60), 0.12)),
+            ("Start hub", MapColorUtils.lerp_rgb(
+                (72, 168, 92), (80, 200, 120), 0.25)
+             ),
+            ("Goal", MapColorUtils.lerp_rgb(
+                (234, 67, 53), (200, 100, 255), 0.2)
+             ),
+            ("Waypoint", MapColorUtils.lerp_rgb(
+                (66, 133, 244), ROCK_MID, 0.2)),
+            ("Priority zone", MapColorUtils.lerp_rgb(
+                (255, 193, 7), (255, 230, 120), 0.15)),
+            ("Restricted zone", MapColorUtils.lerp_rgb(
+                (121, 85, 72), (255, 140, 60), 0.12)),
             ("Blocked", (55, 52, 58)),
             ("No-fly", (90, 30, 40)),
             ("Drone", (255, 99, 99)),
-            *[(f"Route color {i}", CONNECTION_PALETTE[i]) for i in range(min(8, len(CONNECTION_PALETTE)))],
+            *[(f"Route color {i}", CONNECTION_PALETTE[i]) for i in range(
+                min(8, len(CONNECTION_PALETTE))
+                )],
         ]
 
     def _draw_legend_bottom_right(self) -> None:
@@ -195,7 +230,9 @@ class Game:
             pygame.draw.rect(panel, (255, 255, 255), (pad, y, sq, sq), 1)
             panel.blit(
                 surf,
-                (pad + sq + gap, y_base + i * line_h + (line_h - surf.get_height()) // 2),
+                (pad + sq + gap, y_base + i * line_h + (
+                    line_h - surf.get_height()
+                    ) // 2),
             )
         self.screen.blit(panel, (x0, y0))
 
@@ -209,33 +246,55 @@ class Game:
         bg: tuple,
     ) -> None:
         x, y = rect.x, rect.y
-        for ox, oy in ((-2, 0), (2, 0), (0, -2), (0, 2), (-1, -1), (1, 1), (-1, 1), (1, -1)):
+        for ox, oy in (
+            (-2, 0), (2, 0), (0, -2), (0, 2), (
+                -1, -1
+                ), (1, 1), (-1, 1), (1, -1)
+        ):
             surf.blit(font.render(text, True, bg), (x + ox, y + oy))
         surf.blit(font.render(text, True, fg), (x, y))
 
-    def show_completion_splash(self, sim_turns: int, weighted_units: int) -> None:
-        """Full-screen overlay: rounds + weighted move units (1 per normal step, 2 per restricted crossing)."""
+    def show_completion_splash(
+        self, sim_turns: int, weighted_units: int
+    ) -> None:
+
         overlay = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
         overlay.fill((10, 12, 22, 245))
         self.screen.blit(overlay, (0, 0))
 
-        tr = self.splash_font.render("Complete", True, (255, 255, 255)).get_rect(
+        tr = self.splash_font.render(
+            "Complete", True, (255, 255, 255)
+            ).get_rect(
             center=(self.width // 2, self.height // 2 - 78)
         )
-        self._blit_outlined(self.screen, tr, "Complete", self.splash_font, (255, 255, 255), (0, 0, 0))
+        self._blit_outlined(
+            self.screen, tr, "Complete", self.splash_font, (
+                255, 255, 255
+                ), (0, 0, 0)
+            )
 
         t1 = f"Simulation rounds: {sim_turns}"
         t2 = f"Move units (1 normal / 2 restricted): {weighted_units}"
-        r1 = self.splash_sub.render(t1, True, (220, 230, 255)).get_rect(center=(self.width // 2, self.height // 2 - 18))
-        r2 = self.splash_sub.render(t2, True, (200, 220, 255)).get_rect(center=(self.width // 2, self.height // 2 + 20))
-        self._blit_outlined(self.screen, r1, t1, self.splash_sub, (220, 230, 255), (0, 0, 0))
-        self._blit_outlined(self.screen, r2, t2, self.splash_sub, (200, 220, 255), (0, 0, 0))
+        r1 = self.splash_sub.render(t1, True, (220, 230, 255)).get_rect(
+            center=(self.width // 2, self.height // 2 - 18)
+            )
+        r2 = self.splash_sub.render(t2, True, (200, 220, 255)).get_rect(
+            center=(self.width // 2, self.height // 2 + 20)
+            )
+        self._blit_outlined(self.screen, r1, t1, self.splash_sub, (
+            220, 230, 255
+            ), (0, 0, 0))
+        self._blit_outlined(self.screen, r2, t2, self.splash_sub, (
+            200, 220, 255
+            ), (0, 0, 0))
 
         ht = "Press Esc to close"
         hr = self.legend_font.render(ht, True, (180, 190, 220)).get_rect(
             center=(self.width // 2, self.height // 2 + 72)
         )
-        self._blit_outlined(self.screen, hr, ht, self.legend_font, (180, 190, 220), (0, 0, 0))
+        self._blit_outlined(self.screen, hr, ht, self.legend_font, (
+            180, 190, 220
+            ), (0, 0, 0))
         pygame.display.flip()
 
         t0 = pygame.time.get_ticks()
@@ -244,7 +303,9 @@ class Game:
                 if event.type == pygame.QUIT:
                     self.running = False
                     return
-                if event.type == pygame.KEYDOWN and event.key in (pygame.K_ESCAPE, pygame.K_RETURN, pygame.K_SPACE):
+                if event.type == pygame.KEYDOWN and event.key in (
+                    pygame.K_ESCAPE, pygame.K_RETURN, pygame.K_SPACE
+                ):
                     return
             self.clock.tick(120)
 
@@ -264,7 +325,9 @@ class Game:
                 if event.type == pygame.VIDEORESIZE and not self.fullscreen:
                     self.width = max(640, int(event.w))
                     self.height = max(480, int(event.h))
-                    self.screen = pygame.display.set_mode((self.width, self.height), pygame.RESIZABLE)
+                    self.screen = pygame.display.set_mode(
+                        (self.width, self.height), pygame.RESIZABLE
+                        )
                     self._refresh_fonts()
             self.show_state(0, "Press SPACE to start")
             self.clock.tick(120)
@@ -285,18 +348,28 @@ class Game:
         tr = self.splash_font.render(title, True, (255, 255, 255)).get_rect(
             center=(self.width // 2, self.height // 2 - 48)
         )
-        self._blit_outlined(self.screen, tr, title, self.splash_font, (255, 255, 255), (8, 10, 28))
+        self._blit_outlined(self.screen, tr, title, self.splash_font, (
+            255, 255, 255
+            ), (8, 10, 28))
 
-        sub_c = MapColorUtils.lerp_rgb((160, 175, 210), (255, 255, 255), 0.35 + 0.45 * pulse)
+        sub_c = MapColorUtils.lerp_rgb(
+            (160, 175, 210), (255, 255, 255), 0.35 + 0.45 * pulse
+            )
         sub = "Press SPACE to start"
-        sr = self.splash_sub.render(sub, True, sub_c).get_rect(center=(self.width // 2, self.height // 2 + 12))
-        self._blit_outlined(self.screen, sr, sub, self.splash_sub, sub_c, (0, 0, 0))
+        sr = self.splash_sub.render(sub, True, sub_c).get_rect(
+            center=(self.width // 2, self.height // 2 + 12)
+            )
+        self._blit_outlined(
+            self.screen, sr, sub, self.splash_sub, sub_c, (0, 0, 0)
+            )
 
         hint = "Esc or Q to quit"
         hr = self.start_tag.render(hint, True, (150, 160, 190)).get_rect(
             center=(self.width // 2, self.height // 2 + 58)
         )
-        self._blit_outlined(self.screen, hr, hint, self.start_tag, (150, 160, 190), (0, 0, 0))
+        self._blit_outlined(self.screen, hr, hint, self.start_tag, (
+            150, 160, 190
+            ), (0, 0, 0))
 
     def _buf_pos_for_drone(
         self,
@@ -365,7 +438,9 @@ class Game:
             )
             pygame.draw.circle(buf, core, (ix, iy), radius)
             pygame.draw.circle(buf, (255, 255, 255), (ix, iy), radius, width=1)
-            pygame.draw.circle(buf, (12, 10, 20), (ix, iy), max(1, radius - 1), width=1)
+            pygame.draw.circle(buf, (12, 10, 20), (ix, iy), max(
+                1, radius - 1), width=1
+                               )
 
     def _draw_drones_screen_overlay(
         self,
@@ -375,9 +450,11 @@ class Game:
         drone_buf_xy: dict[str, tuple[float, float]],
         cell: int,
     ) -> None:
-        """Second pass on screen space so drones stay visible after pixel-scale."""
+
         colors = self._drone_colors(self.parser.nb_drones)
-        r_screen = max(5, min(14, int(map_rect.width / max(bw, 1) * max(2, min(5, (cell + 6) // 4)) + 3)))
+        r_screen = max(5, min(14, int(map_rect.width / max(bw, 1) * max(
+            2, min(5, (cell + 6) // 4)) + 3))
+                       )
         for i in range(self.parser.nb_drones):
             did = f"drone{i}"
             if did not in drone_buf_xy:
@@ -393,8 +470,14 @@ class Game:
             )
             pygame.draw.circle(self.screen, hi, (sx, sy), r_screen)
             pygame.draw.circle(self.screen, c, (sx, sy), max(2, r_screen - 2))
-            pygame.draw.circle(self.screen, (255, 255, 255), (sx, sy), r_screen, width=2)
-            pygame.draw.circle(self.screen, (18, 16, 28), (sx, sy), max(2, r_screen - 3), width=1)
+            pygame.draw.circle(
+                self.screen, (255, 255, 255), (sx, sy), r_screen, width=2
+                )
+            pygame.draw.circle(
+                self.screen, (18, 16, 28), (
+                    sx, sy
+                    ), max(2, r_screen - 3), width=1
+                )
             lab = self.small_font.render(str(i), True, (255, 255, 255))
             lr = lab.get_rect(center=(sx, sy))
             self.screen.blit(lab, (lr.x + 1, lr.y + 1))
@@ -428,25 +511,33 @@ class Game:
             start = pos_buf.get(zone.name)
             if start is None:
                 continue
-            for ei, target in enumerate(getattr(zone, "connections", []) or []):
+            for ei, target in enumerate(
+                getattr(zone, "connections", []) or []
+            ):
                 if target not in zone_by_name:
                     continue
                 end = pos_buf.get(target)
                 if end is None:
                     continue
                 col = CONNECTION_PALETTE[ei % len(CONNECTION_PALETTE)]
-                PixelRenderer.draw_connection_line(buf, start, end, col, width=line_w)
+                PixelRenderer.draw_connection_line(
+                    buf, start, end, col, width=line_w
+                    )
 
         pw = max(6, min(14, cell + 2))
         ph = max(5, min(11, cell))
         for zone in zones:
             bx, by = pos_buf[zone.name]
             accent = self._accent(zone, tick)
-            PixelRenderer.draw_zone_node(buf, zone, bx, by, pw, ph, accent, tick)
+            PixelRenderer.draw_zone_node(
+                buf, zone, bx, by, pw, ph, accent, tick
+            )
 
         self._draw_drones_buf(buf, pos_buf, drone_buf_xy, tick, cell)
 
-        scaled = PixelRenderer.nearest_scale(buf, map_rect.width, map_rect.height)
+        scaled = PixelRenderer.nearest_scale(
+            buf, map_rect.width, map_rect.height
+            )
         self.screen.blit(scaled, map_rect.topleft)
         self._draw_drones_screen_overlay(map_rect, bw, bh, drone_buf_xy, cell)
         pygame.draw.rect(self.screen, (120, 140, 200), map_rect, 2)
@@ -467,32 +558,54 @@ class Game:
                 hub = getattr(zone, "hub_kind", None)
                 tag = ""
                 if isinstance(hub, str):
-                    tag = {"start": "S", "end": "Z", "waypoint": "W"}.get(hub, "")
+                    tag = {"start": "S", "end": "Z", "waypoint": "W"}.get(
+                        hub, ""
+                        )
                 if tag:
-                    tag_surface = self.zone_tag_font.render(tag, True, (255, 255, 255))
+                    tag_surface = self.zone_tag_font.render(tag, True, (
+                        255, 255, 255
+                        ))
                     tag_rect = tag_surface.get_rect(
-                        center=(sx - screen_pw // 2 + max(8, screen_pw // 4), sy - screen_ph // 2 + 8)
+                        center=(sx - screen_pw // 2 + max(
+                            8, screen_pw // 4
+                            ), sy - screen_ph // 2 + 8)
                     )
-                    outline = self.zone_tag_font.render(tag, True, (12, 10, 18))
+                    outline = self.zone_tag_font.render(
+                        tag, True, (12, 10, 18)
+                        )
                     for ox, oy in ((1, 1), (-1, -1), (1, -1), (-1, 1)):
-                        self.screen.blit(outline, (tag_rect.x + ox, tag_rect.y + oy))
+                        self.screen.blit(outline, (
+                            tag_rect.x + ox, tag_rect.y + oy)
+                                         )
                     self.screen.blit(tag_surface, tag_rect)
 
                 name_s = zone.name
                 if len(name_s) > 18:
                     name_s = name_s[:16] + "…"
-                label = self.map_label_font.render(name_s, True, (248, 250, 252))
-                label_rect = label.get_rect(center=(sx, sy + screen_ph // 2 + max(10, label_size)))
-                outline_label = self.map_label_font.render(name_s, True, (10, 12, 24))
-                for ox, oy in ((-2, 0), (2, 0), (0, -2), (0, 2), (-1, -1), (1, 1)):
-                    self.screen.blit(outline_label, (label_rect.x + ox, label_rect.y + oy))
+                label = self.map_label_font.render(
+                    name_s, True, (248, 250, 252)
+                    )
+                label_rect = label.get_rect(center=(
+                    sx, sy + screen_ph // 2 + max(10, label_size)
+                    ))
+                outline_label = self.map_label_font.render(
+                    name_s, True, (10, 12, 24)
+                    )
+                for ox, oy in (
+                    (-2, 0), (2, 0), (0, -2), (0, 2), (-1, -1), (1, 1)
+                ):
+                    self.screen.blit(outline_label, (
+                        label_rect.x + ox, label_rect.y + oy
+                        ))
                 self.screen.blit(label, label_rect)
 
                 zt = getattr(zone, "zone_type", "normal") or "normal"
                 if zt != "normal" or hub == "end":
                     sub = f"{zt}" if hub != "end" else "Goal"
                     sm = self.small_font.render(sub, True, (210, 220, 245))
-                    sm_r = sm.get_rect(center=(sx, label_rect.bottom + max(6, label_size // 2)))
+                    sm_r = sm.get_rect(center=(sx, label_rect.bottom + max(
+                        6, label_size // 2
+                        )))
                     for ox, oy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
                         o = self.small_font.render(sub, True, (15, 15, 25))
                         self.screen.blit(o, (sm_r.x + ox, sm_r.y + oy))
@@ -506,18 +619,22 @@ class Game:
             self.screen.blit(o, (lx + ox, ly + oy))
         self.screen.blit(title, (lx, ly))
         sy = ly + title.get_height() + 2
-        sub = self.turn_hud_phase.render(phase_label, True, (200, 210, 235))
+        phase_surf = self.turn_hud_phase.render(
+            phase_label, True, (200, 210, 235)
+            )
         for ox, oy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
             o2 = self.turn_hud_phase.render(phase_label, True, (6, 8, 18))
             self.screen.blit(o2, (lx + ox, sy + oy))
-        self.screen.blit(sub, (lx, sy))
+        self.screen.blit(phase_surf, (lx, sy))
 
         if show_legend:
             self._draw_legend_bottom_right()
 
         pygame.display.flip()
 
-    def _build_drone_xy_static(self, pos_buf: dict[str, tuple[int, int]]) -> dict[str, tuple[float, float]]:
+    def _build_drone_xy_static(
+        self, pos_buf: dict[str, tuple[int, int]]
+    ) -> dict[str, tuple[float, float]]:
         by_zone = self._drones_by_zone()
         loc = self._drone_zone_map()
         out: dict[str, tuple[float, float]] = {}
@@ -543,7 +660,9 @@ class Game:
         loc = self._drone_zone_map()
         incoming: dict[str, list[str]] = defaultdict(list)
         for did, proposal in proposals.items():
-            if proposal and proposal[0] and proposal[1] and proposal[0] != proposal[1]:
+            if ((
+                proposal and proposal[0] and proposal[1] and proposal[0]
+                 ) != proposal[1]):
                 incoming[str(proposal[1])].append(did)
         for k in incoming:
             incoming[k].sort()
@@ -562,7 +681,9 @@ class Game:
                 if src in pos_buf and dst in pos_buf and src != dst:
                     sx, sy = pos_buf[src]
                     ex, ey = pos_buf[dst]
-                    bx0, by0 = self._buf_pos_for_drone(did, pos_buf, by_zone, src)
+                    bx0, by0 = self._buf_pos_for_drone(
+                        did, pos_buf, by_zone, src
+                        )
                     lst = incoming.get(dst, [did])
                     idx = lst.index(did) if did in lst else 0
                     n = max(len(lst), 1)
@@ -573,7 +694,9 @@ class Game:
                     by1 = ey + r * math.sin(ang) + oy
                     x = bx0 + (bx1 - bx0) * uu
                     y = by0 + (by1 - by0) * uu
-                    fox, foy = self._flight_offset(did, uu, float(sx), float(sy), float(ex), float(ey))
+                    fox, foy = self._flight_offset(
+                        did, uu, float(sx), float(sy), float(ex), float(ey)
+                        )
                     out[did] = (x + fox, y + foy)
                     continue
             z = loc.get(did)

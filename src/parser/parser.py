@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 
 class parser:
     def __init__(self):
@@ -50,7 +52,9 @@ class parser:
             try:
                 return zone(name, x, y, zone_type, color, max_drones)
             except Exception as e:
-                print(f"An Error has occured while creating the zone object: {e}")
+                print(
+                    f"An Error has occured while creating the zone object: {e}"
+                    )
 
     def parse(self, file_path):
         if file_path is None:

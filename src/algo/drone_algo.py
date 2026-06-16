@@ -6,20 +6,21 @@ from typing import Any
 
 
 class drone_algo:
-    """Turn-based moves with zone/link capacity, restricted 2-turn edges, and goal-directed routing."""
 
     def __init__(self, parser_instance: Any):
         self.parser_instance = parser_instance
-        self._in_transit: dict[str, tuple[str, str]] = {}  # drone_id -> (from_zone, to_zone) restricted hop
+        self._in_transit: dict[str, tuple[str, str]] = {}
         self._dist_to_goal: dict[str, float] = {}
-        # VII.3: +1 per normal/priority/goal step, +2 total crossing into restricted (split: +1 transit, +1 land)
+
         self.turn_units: int = 0
         self._rebuild_routing_table()
 
     def _rebuild_routing_table(self) -> None:
-        """Multi-source Dijkstra on reversed graph: min turn-cost to reach any goal from each zone."""
+
         vm = self.parser_instance.vars
-        goals = [z.name for z in vm.values() if getattr(z, "hub_kind", None) == "end"]
+        goals = [z.name for z in vm.values() if getattr(
+            z, "hub_kind", None
+            ) == "end"]
         dist: dict[str, float] = {name: inf for name in vm}
         pq: list[tuple[float, str]] = []
         for g in goals:
@@ -63,7 +64,7 @@ class drone_algo:
         return self._dist_to_goal.get(zone_name, inf)
 
     def begin_turn(self) -> None:
-        """Finish restricted transits (drones on connection must arrive this turn)."""
+
         vm = self.parser_instance.vars
         for did, (src, dst) in list(self._in_transit.items()):
             zd = vm.get(dst)
@@ -73,7 +74,9 @@ class drone_algo:
             if len(zd.drones) >= zd.max_drones:
                 continue
             zd.drones.append(did)
-            zd.pending_incoming = max(0, getattr(zd, "pending_incoming", 0) - 1)
+            zd.pending_incoming = max(0, getattr(
+                zd, "pending_incoming", 0
+                ) - 1)
             self.turn_units += 1
             del self._in_transit[did]
 
@@ -82,13 +85,16 @@ class drone_algo:
 
     def check_next_move(self, drone_id, current_zone, next_zone):
         if current_zone.zone_type == "no_fly":
-            print(f"Drone {drone_id} cannot move from {current_zone.name} to {next_zone.name}: current zone is no-fly")
+            print(f"Drone {drone_id} cannot move from {current_zone.name} "
+                  f"to {next_zone.name}: current zone is no-fly")
             return False
         if next_zone.zone_type == "no_fly":
-            print(f"Drone {drone_id} cannot move from {current_zone.name} to {next_zone.name}: next zone is no-fly")
+            print(f"Drone {drone_id} cannot move from {current_zone.name} "
+                  f"to {next_zone.name}: next zone is no-fly")
             return False
         if next_zone.zone_type == "blocked":
-            print(f"Drone {drone_id} cannot move from {current_zone.name} to {next_zone.name}: next zone is blocked")
+            print(f"Drone {drone_id} cannot move from {current_zone.name} "
+                  f"to {next_zone.name}: next zone is blocked")
             return False
         occ = len(next_zone.drones) + getattr(next_zone, "pending_incoming", 0)
         if occ >= next_zone.max_drones:
@@ -107,7 +113,9 @@ class drone_algo:
         return True
 
     def move_drone(self, drone_id, current_zone_name, next_zone_name):
-        if current_zone_name not in self.parser_instance.vars or next_zone_name not in self.parser_instance.vars:
+        if (
+            current_zone_name not in self.parser_instance.vars
+        ) or next_zone_name not in self.parser_instance.vars:
             print("One or both zones not found")
             return False
 
@@ -117,12 +125,16 @@ class drone_algo:
             return False
 
         if hasattr(current_zone, "drones") and drone_id in current_zone.drones:
-            swaped_drone = current_zone.drones.pop(current_zone.drones.index(drone_id))
+            swaped_drone = current_zone.drones.pop(
+                current_zone.drones.index(drone_id)
+                )
             next_zone.drones.append(swaped_drone)
-            print(f"Drone {drone_id} moved from {current_zone.name} to {next_zone.name}")
+            print(f"Drone {drone_id} moved from {current_zone.name} "
+                  f"to {next_zone.name}")
             return True
         else:
-            print(f"Drone {drone_id} not found in current zone {current_zone.name}")
+            print(f"Drone {drone_id} not found "
+                  f"in current zone {current_zone.name}")
             return False
 
     def get_drone_location(self, drone_id):
@@ -133,7 +145,9 @@ class drone_algo:
         print(f"Drone {drone_id} not found")
         return None
 
-    def get_possible_moves(self, drone_id, current_zone_name, *, consider_capacity: bool = True):
+    def get_possible_moves(
+        self, drone_id, current_zone_name, *, consider_capacity: bool = True
+    ) -> list[str]:
         if current_zone_name not in self.parser_instance.vars:
             print("Current zone not found")
             return []
@@ -172,8 +186,10 @@ class drone_algo:
             return 9999
         return len(z.drones) + getattr(z, "pending_incoming", 0)
 
-    def validate_possible_moves(self, possible_moves: list[str], current_zone_name: str) -> str | None:
-        """Pick neighbor on a shortest-cost path to goal; avoid dead-ends (infinite dist)."""
+    def validate_possible_moves(
+        self, possible_moves: list[str], current_zone_name: str
+    ) -> str | None:
+
         if not possible_moves:
             return None
         feasible = [m for m in possible_moves if self.dist_to_goal(m) < inf]
@@ -226,7 +242,7 @@ class drone_algo:
         return int(caps[dst_name])
 
     def apply_resolved_moves(self, proposals: dict[str, tuple[Any, Any]]):
-        """Nearer-goal drones first; zone + link caps; restricted = 2-turn (on connection until next begin_turn)."""
+
         vm = self.parser_instance.vars
         end = {k: list(getattr(z, "drones", [])) for k, z in vm.items()}
         nb = self.parser_instance.nb_drones
@@ -279,7 +295,8 @@ class drone_algo:
                 if cap_e is not None:
                     edge_use[(src, dst)] = edge_use.get((src, dst), 0) + 1
                 self.turn_units += 1
-                print(f"Drone {did} restricted-transit {src} -> {dst} (arrives next turn)")
+                print(f"Drone {did} restricted-transit {src} -> {dst} "
+                      f"(arrives next turn)")
                 continue
 
             tent[dst].append(did)
@@ -299,18 +316,22 @@ class drone_algo:
             z.drones = end[k]
 
     def decide_next_move(self, drone_id, current_zone_name, quiet=False):
-        # Capacity is resolved globally in `apply_resolved_moves`; skipping it here
-        # enables same-turn vacate/refill chains at tight bottlenecks.
-        possible_moves = self.get_possible_moves(drone_id, current_zone_name, consider_capacity=False)
+
+        possible_moves = self.get_possible_moves(
+            drone_id, current_zone_name, consider_capacity=False
+            )
         if not quiet:
             print(f"Possible moves: {possible_moves}")
 
         if not possible_moves:
             if not quiet:
-                print(f"No possible moves for drone {drone_id} from {current_zone_name}")
+                print(f"No possible moves for drone {drone_id} "
+                      f"from {current_zone_name}")
             return None
 
-        best_move = self.validate_possible_moves(possible_moves, current_zone_name)
+        best_move = self.validate_possible_moves(
+            possible_moves, current_zone_name
+            )
         if not quiet:
             print(f"check best move: {best_move}")
         return best_move

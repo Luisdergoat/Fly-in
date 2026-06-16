@@ -1,7 +1,9 @@
 import os
 
 
-def _pygame_wait_quit(g, turn_index: int, subtitle: str = "Press Esc to close") -> None:
+def _pygame_wait_quit(
+    g, turn_index: int, subtitle: str = "Press Esc to close"
+) -> None:
     import pygame
 
     t0 = pygame.time.get_ticks()
@@ -40,8 +42,12 @@ class Main:
                 "variable or provide a map as a command-line argument.")
             return
 
-        windowed = os.environ.get("FLYIN_WINDOWED", "").lower() in ("1", "true", "yes")
-        verbose_print = os.environ.get("FLYIN_VERBOSE", "").lower() in ("1", "true", "yes")
+        windowed = os.environ.get(
+            "FLYIN_WINDOWED", "").lower() in ("1", "true", "yes"
+                                              )
+        verbose_print = os.environ.get(
+            "FLYIN_VERBOSE", "").lower() in ("1", "true", "yes"
+                                             )
 
         p = parser()
         if not p.parse(map_path):
@@ -74,7 +80,8 @@ class Main:
         while not a.all_drones_at_goal():
             turn += 1
             if turn > max_turns:
-                print(f"\nStopped after {max_turns} turns (not all drones reached goal).")
+                print(f"\nStopped after {max_turns} turns "
+                      f"(not all drones reached goal).")
                 output_gen.finalize()
                 print("Output written to fly_in.txt")
                 g.show_state(turn, "Stopped — max turns")
@@ -126,7 +133,8 @@ class Main:
                 p.print_vars()
 
         os.system("clear")
-        print(f"\nAll drones reached the goal in {turn} simulation round(s). Move units: {a.turn_units}")
+        print(f"\nAll drones reached the goal in {turn} simulation round(s)."
+              f"Move units: {a.turn_units}")
         output_gen.finalize()
         print("Output written to fly_in.txt")
         g.show_state(turn, "")

@@ -60,7 +60,7 @@ MAP_COLORS: dict[str, Color] = {
     "lime": (50, 205, 50),
 }
 
-# Distinct edge colors for multiple connections from one waypoint (high contrast on sky).
+# Distinct edge colors for multiple connections from one waypoint
 CONNECTION_PALETTE: tuple[Color, ...] = (
     (255, 82, 82),
     (64, 196, 255),

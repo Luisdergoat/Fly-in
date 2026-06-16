@@ -19,7 +19,9 @@ class MapLayout:
             return []
         zones: list[Any] = []
         for value in data.values():
-            if hasattr(value, "x") and hasattr(value, "y") and hasattr(value, "name"):
+            if hasattr(
+                value, "x"
+            ) and hasattr(value, "y") and hasattr(value, "name"):
                 zones.append(value)
         return zones
 
@@ -32,7 +34,9 @@ class MapLayout:
         return min(xs), min(ys), max(xs), max(ys)
 
     @staticmethod
-    def compute_initial_size(zones: list[Any], base_window: tuple[int, int]) -> tuple[int, int]:
+    def compute_initial_size(
+        zones: list[Any], base_window: tuple[int, int]
+    ) -> tuple[int, int]:
         min_x, min_y, max_x, max_y = MapLayout.bbox(zones)
         span_x = max(max_x - min_x, 0) + 1
         span_y = max(max_y - min_y, 0) + 1
@@ -59,7 +63,9 @@ class MapLayout:
 
     @staticmethod
     def map_buffer_size(map_rect: pygame.Rect) -> tuple[int, int]:
-        return max(32, map_rect.width // PIXEL_SCALE), max(24, map_rect.height // PIXEL_SCALE)
+        return max(32, map_rect.width // PIXEL_SCALE), max(
+            24, map_rect.height // PIXEL_SCALE
+            )
 
     @staticmethod
     def _layout_positions_for_cell(
@@ -115,19 +121,23 @@ class MapLayout:
         min_sep = max(5.0, min(11.0, 4.0 + n * 0.04))
         while cell >= 2:
             positions = MapLayout._layout_positions_for_cell(
-                zones, margin_buf, inner_w, inner_h, cell, min_x, min_y, span_x, span_y
+                zones, margin_buf, inner_w, inner_h, cell, min_x, min_y,
+                span_x, span_y
             )
             if MapLayout._min_neighbor_distance(positions) >= min_sep:
                 break
             cell -= 1
 
         positions = MapLayout._layout_positions_for_cell(
-            zones, margin_buf, inner_w, inner_h, cell, min_x, min_y, span_x, span_y
+            zones, margin_buf, inner_w, inner_h, cell, min_x, min_y,
+            span_x, span_y
         )
         return cell, positions
 
     @staticmethod
-    def buf_to_screen(map_rect: pygame.Rect, bx: int, by: int) -> tuple[int, int]:
+    def buf_to_screen(
+        map_rect: pygame.Rect, bx: int, by: int
+    ) -> tuple[int, int]:
         bw, bh = MapLayout.map_buffer_size(map_rect)
         sx = map_rect.left + int(bx * map_rect.width / bw)
         sy = map_rect.top + int(by * map_rect.height / bh)
