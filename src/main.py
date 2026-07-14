@@ -1,24 +1,39 @@
 import os
 
 
-def _pygame_wait_quit(
-    g, turn_index: int, subtitle: str = "Press Esc to close"
-) -> None:
-    import pygame
+class Pygame_wait_quit:
+    def _pygame_wait_quit(
+        g, turn_index: int, subtitle: str = "Press Esc to close"
+    ) -> None:
+        import pygame
 
-    t0 = pygame.time.get_ticks()
-    while pygame.time.get_ticks() - t0 < 120_000 and g.running:
-        if not g.pump_events():
-            break
-        g.show_state(turn_index, subtitle)
-        g.clock.tick(20)
-    pygame.quit()
+        t0 = pygame.time.get_ticks()
+        while pygame.time.get_ticks() - t0 < 120_000 and g.running:
+            if not g.pump_events():
+                break
+            g.show_state(turn_index, subtitle)
+            g.clock.tick(20)
+        pygame.quit()
+
+
+def _capacity_lines(p, a) -> list[str]:
+    lines = []
+    for name, z in p.vars.items():
+        lines.append(f"Zone {name}: {len(z.drones)}/{z.max_drones} drones")
+    for src_name, z in p.vars.items():
+        for dst_name, cap in getattr(z, "link_capacity", {}).items():
+            used = a.last_edge_use.get((src_name, dst_name), 0)
+            lines.append(
+                f"Connection {src_name}-{dst_name}: {used}/{cap} "
+                f"capacity used"
+            )
+    return lines
 
 
 class Main:
-    def __init__(self, map):
+    def __init__(self, map, capacity_info: bool = False):
         self.map = map
-        pass
+        self.capacity_info = capacity_info
 
     def run(self) -> None:
         try:
@@ -85,7 +100,9 @@ class Main:
                 output_gen.finalize()
                 print("Output written to fly_in.txt")
                 g.show_state(turn, "Stopped — max turns")
-                _pygame_wait_quit(g, turn, "Press Esc to close")
+                pygame_wait_quit = Pygame_wait_quit()
+                pygame_wait_quit._pygame_wait_quit(g,
+                                                   turn, "Press Esc to close")
                 return
 
             a.begin_turn()
@@ -114,8 +131,6 @@ class Main:
                     continue
                 turn_movements[did] = dst
 
-            output_gen.record_turn(turn_movements)
-
             if not g.play_turn_animation(
                 turn,
                 proposals,
@@ -128,6 +143,11 @@ class Main:
 
                 pygame.quit()
                 return
+
+            capacity_lines = (
+                _capacity_lines(p, a) if self.capacity_info else []
+            )
+            output_gen.record_turn(turn_movements, capacity_lines)
 
             if verbose_print or turn <= 2 or turn % 50 == 0:
                 print(f"\n--- Turn {turn} ---")

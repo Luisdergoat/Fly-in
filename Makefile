@@ -64,6 +64,10 @@ requirements.txt:
 run: install
 	@echo "$(BLUE)🎮 Running Drones ...$(RESET)"
 	@PYTHONPATH=$(SRC_DIR) $(PYTHON) $(MAIN) $(ARGS)
+#	@if echo "$(ARGS)" | grep -q -- "capacity-info"; then \
+		echo "$(BLUE)📄 Capacity info requested $(OUTPUT):$(RESET)"; \
+		cat $(OUTPUT); \
+	fi
 
 debug: install
 	@echo "$(BLUE)🐞 Running in debug mode...$(RESET)"

@@ -13,6 +13,7 @@ class drone_algo:
         self._dist_to_goal: dict[str, float] = {}
 
         self.turn_units: int = 0
+        self.last_edge_use: dict[tuple[str, str], int] = {}
         self._rebuild_routing_table()
 
     def _rebuild_routing_table(self) -> None:
@@ -314,6 +315,7 @@ class drone_algo:
 
         for k, z in vm.items():
             z.drones = end[k]
+        self.last_edge_use = edge_use
 
     def decide_next_move(self, drone_id, current_zone_name, quiet=False):
 
