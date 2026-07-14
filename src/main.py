@@ -109,11 +109,12 @@ class Main:
 
             turn_movements = {}
             for did, (src, dst) in proposals.items():
-                if src != dst:
-                    turn_movements[did] = dst
+                zone = p.vars[dst]
+                if getattr(zone, "hub_kind", None) == "end":
+                    continue
+                turn_movements[did] = dst
 
-            if turn_movements:
-                output_gen.record_turn(turn_movements)
+            output_gen.record_turn(turn_movements)
 
             if not g.play_turn_animation(
                 turn,

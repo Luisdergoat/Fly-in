@@ -4,8 +4,9 @@ class File_generator:
         self.turns = []
 
     def record_turn(self, moves_dict):
-        """Record a turn's movements.
-        moves_dict: {drone_id: destination_zone_name}
+        """Record a turn's drone positions.
+        moves_dict: {drone_id: current_zone_name} for every drone
+        not yet at the goal zone.
         Example: {'drone0': 'zone1', 'drone1': 'zone2'}
         """
         self.turns.append(moves_dict)
@@ -24,7 +25,7 @@ class File_generator:
                         moves_list.append(f"D{drone_num}-{zone_name}")
 
                     if moves_list:
-                        f.write(" ".join(moves_list) + "\n")
+                        f.write(" ".join(moves_list) + "\n" + "\n")
 
         except IOError as e:
             print(f"Error writing to file: {e}")
