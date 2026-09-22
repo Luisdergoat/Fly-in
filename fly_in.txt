@@ -1,0 +1,4 @@
+D0-waypoint1 D1-waypoint1
+
+D0-waypoint2 D1-waypoint2
+

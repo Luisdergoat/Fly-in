@@ -19,6 +19,7 @@ RESET	= \033[0m
 
 # ================================ VARIABLES =============================== #
 VENV		= venv
+PYTHON3		= python3.12
 PYTHON		= $(VENV)/bin/python3
 DEBUG_MODE	= $(VENV)/bin/python3 -m pdb
 PIP			= $(VENV)/bin/pip
@@ -50,13 +51,13 @@ install: $(VENV)/bin/activate requirements.txt
 # Create virtual environment
 $(VENV)/bin/activate:
 	@echo "$(BLUE)🔧 Creating virtual environment...$(RESET)"
-	@python3 -m venv $(VENV)
+	@$(PYTHON3) -m venv $(VENV)
 	@echo "$(GREEN)✅ Virtual environment created!$(RESET)"
 
 # Create requirements.txt if it doesn't exist
 requirements.txt:
 	@echo "$(BLUE)📝 Creating requirements.txt...$(RESET)"
-	@echo "pygame>=2.0.0" > requirements.txt
+	@echo "pygame==2.6.1" > requirements.txt
 	@echo "$(GREEN)✅ requirements.txt created!$(RESET)"
 	@echo "$(GREEN)✅ pygame installed successfully!$(RESET)"
 
